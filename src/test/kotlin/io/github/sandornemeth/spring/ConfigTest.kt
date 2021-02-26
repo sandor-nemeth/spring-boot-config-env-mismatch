@@ -1,6 +1,7 @@
 package io.github.sandornemeth.spring
 
 import org.assertj.core.api.Assertions
+import org.assertj.core.api.SoftAssertions
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Value
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.StandardEnvironment
 import org.springframework.core.env.SystemEnvironmentPropertySource
 import org.springframework.mock.env.MockEnvironment
+import org.springframework.stereotype.Component
 
 class ConfigTest {
     lateinit var ctx : AnnotationConfigApplicationContext
@@ -32,13 +34,16 @@ class ConfigTest {
         env.propertySources.addFirst(sysenv)
 
         ctx = AnnotationConfigApplicationContext()
-        ctx.register(TestConfig::class.java)
+        ctx.register(TestConfig::class.java, AutowiredValueBean::class.java)
         ctx.environment = env
 
         ctx.refresh()
 
-        Assertions.assertThat(ctx.getBean(ConfigProps::class.java).confValue).isEqualTo("envValue")
-        Assertions.assertThat(ctx.getBean(ValueBean::class.java).confValue).isEqualTo("envValue")
+        val softly = SoftAssertions()
+        softly.assertThat(ctx.getBean(ConfigProps::class.java).confValue).isEqualTo("envValue")
+        softly.assertThat(ctx.getBean(AutowiredValueBean::class.java).confValue).isEqualTo("envValue")
+        softly.assertThat(ctx.getBean(ValueBean::class.java).confValue).isEqualTo("envValue")
+        softly.assertAll()
     }
 
     @ConfigurationProperties("props")
@@ -46,7 +51,13 @@ class ConfigTest {
         var confValue: String? = null
     }
 
-    data class ValueBean(val confValue: String)
+    @Component
+    class AutowiredValueBean() {
+        @Value("\${props.confValue}")
+        lateinit var confValue: String
+    }
+
+    class ValueBean(val confValue: String)
 
     @Configuration
     @EnableConfigurationProperties(ConfigProps::class)
