@@ -9,3 +9,9 @@ for the actual test to reproduce the issue.
 
 The issue is reproduced on the latest Spring Core version (5.3.4) shipping with
 Spring Boot 2.4.3.
+
+
+# Credits
+
+This issue was originally during work done at 
+[Trade Republic](https://traderepublic.com).
