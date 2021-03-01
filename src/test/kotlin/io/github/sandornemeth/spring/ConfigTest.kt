@@ -39,10 +39,19 @@ class ConfigTest {
 
         ctx.refresh()
 
+        val valueFromConfigProperties = ctx.getBean(ConfigProps::class.java).confValue
+        val valueFromValueAnnotation = ctx.getBean(AutowiredValueBean::class.java).confValue
+
         val softly = SoftAssertions()
-        softly.assertThat(ctx.getBean(ConfigProps::class.java).confValue).isEqualTo("envValue")
-        softly.assertThat(ctx.getBean(AutowiredValueBean::class.java).confValue).isEqualTo("envValue")
-        softly.assertThat(ctx.getBean(ValueBean::class.java).confValue).isEqualTo("envValue")
+        softly.assertThat(valueFromConfigProperties)
+            .describedAs("Value from @ConfigurationProperties should equal to value from @Value annotation")
+            .isEqualTo(valueFromValueAnnotation)
+        softly.assertThat(valueFromConfigProperties)
+            .describedAs("Value from configuration properties should be resolved from the environment variable")
+            .isEqualTo("envValue")
+        softly.assertThat(valueFromValueAnnotation)
+            .describedAs("Value from @Value annotation should be resolved from the environment variable")
+            .isEqualTo("envValue")
         softly.assertAll()
     }
 
@@ -57,13 +66,8 @@ class ConfigTest {
         lateinit var confValue: String
     }
 
-    class ValueBean(val confValue: String)
-
     @Configuration
     @EnableConfigurationProperties(ConfigProps::class)
     class TestConfig {
-
-        @Bean
-        fun valueBean(@Value("\${props.confValue}") confValue: String) = ValueBean(confValue)
     }
 }
