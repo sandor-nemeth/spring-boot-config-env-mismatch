@@ -23,11 +23,8 @@ class ConfigTest {
         ctx.close()
     }
 
-    /**
-     * This seem to conflict https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-external-config
-     */
     @Test
-    fun reproduce() {
+    fun `resolve environment value with _ `() {
         val sysenv = SystemEnvironmentPropertySource(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME, mapOf("PROPS_CONF_VALUE" to "envValue"))
 
         val env = MockEnvironment().withProperty("props.confValue", "value")
@@ -39,6 +36,26 @@ class ConfigTest {
 
         ctx.refresh()
 
+        assertProperties()
+    }
+
+    @Test
+    fun `resolve environment value without _`() {
+        val sysenv = SystemEnvironmentPropertySource(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME, mapOf("PROPS_CONFVALUE" to "envValue"))
+
+        val env = MockEnvironment().withProperty("props.confValue", "value")
+        env.propertySources.addFirst(sysenv)
+
+        ctx = AnnotationConfigApplicationContext()
+        ctx.register(TestConfig::class.java, AutowiredValueBean::class.java)
+        ctx.environment = env
+
+        ctx.refresh()
+
+        assertProperties()
+    }
+
+    fun assertProperties() {
         val valueFromConfigProperties = ctx.getBean(ConfigProps::class.java).confValue
         val valueFromValueAnnotation = ctx.getBean(AutowiredValueBean::class.java).confValue
 
